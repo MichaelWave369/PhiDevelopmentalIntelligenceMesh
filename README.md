@@ -62,3 +62,37 @@ recorded explicitly; independent held-out validation prevents grading on
 lessons the system has memorized.
 
 Open-source MIT license. Built for local-first, auditable experiments.
+
+## v0.2: Honest growth measurements and constructive teaching
+
+Run independent repeated synthetic experiments to compare **learning new
+worlds** against **retaining old worlds**. See `docs/EXPERIMENT_02.md` for
+study design, fairness limits, and pre-registration rules.
+
+```bash
+python -m devmesh study --runs 10 --samples 60 --output outputs/study-369
+```
+
+Open `outputs/study-369/study.html`. Full per-seed results are in `study.json`,
+and a human-readable critique handoff is in `review_packet.md`. Fixed networks
+can retain old associations only because they reject new links; the comparison
+explicitly reports new-task accuracy too. Replay gets additional learning
+updates, so **no compute-matched victory is claimed**.
+
+A deliberate, opt-in lesson queue adds provenance, deterministic spaced
+practice, corrective feedback, and persistence across process restarts:
+
+```bash
+python -m devmesh teach-card --db data/learner.sqlite --world geometry \
+  --source triangle --expected 'three sides' --provenance 'manual lesson 1'
+python -m devmesh due --db data/learner.sqlite
+python -m devmesh answer --db data/learner.sqlite --card-id 1 --response 'three sides'
+python -m devmesh advance-clock --db data/learner.sqlite --steps 2
+python -m devmesh due --db data/learner.sqlite
+```
+
+The practice clock measures **exercise steps, not elapsed days**. Every card
+must be manually enrolled; no chat history is scraped. Teacher-approved
+associations are protected, meaning enough cards can exhaust the fixed link
+budget. This is a simple, auditable tutor, **not a child, autonomous agent,
+or a self-updating language model**.

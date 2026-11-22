@@ -14,5 +14,7 @@ jobs:
           python-version: '3.12'
       - name: Run tests
         run: python -m unittest discover -s tests -v
-      - name: Offline benchmark smoke
+      - name: Offline multi-seed study smoke
+      run: python -m devmesh study --runs 2 --samples 10 --output outputs/study-smoke
+    - name: Offline benchmark smoke
         run: python -m devmesh benchmark --samples 20 --output outputs/smoke

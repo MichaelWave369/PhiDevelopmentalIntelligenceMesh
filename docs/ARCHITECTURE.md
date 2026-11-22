@@ -46,3 +46,13 @@ not messages automatically sent to another model.
 - No arbitrary tool execution, self-modification or autonomous source writes.
 - Do not ingest personal chat logs as training data without explicit consent.
 - No automatic model downloads, paid APIs, model activation, or GitHub pushes.
+
+## v0.2 extension
+
+`devmesh.tutor.SpacedTutor` shares the learner's SQLite file but maintains a
+separate explicitly enrolled `practice_cards` table and a persistent simulated
+`practice_clock`. There is no hidden data import or automatic agent action.
+`due()` does not expose answer keys. `answer()` reinforces only the approved
+answer and stores a boolean outcome rather than raw incorrect answers.
+`devmesh.study.run_study()` runs isolated per-seed benchmarking and produces
+aggregate/per-seed evidence with both forgetting and adaptation metrics.

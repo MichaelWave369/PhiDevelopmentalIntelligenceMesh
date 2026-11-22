@@ -5,6 +5,8 @@ from pathlib import Path
 from .benchmark import run_benchmark
 from .bridges import buddy_counts, coherence_summary, emergence_worlds, mesh_status
 from .core import DevelopmentalLearner
+from .tutor import SpacedTutor
+from .study import run_study
 
 
 def main():
@@ -15,6 +17,32 @@ def main():
     b.add_argument('--capacity',type=int,default=9)
     b.add_argument('--samples',type=int,default=180)
     b.add_argument('--output',type=Path,default=Path('outputs/seed-369'))
+    study=sub.add_parser('study',help='multi-seed retention vs adaptation study')
+    study.add_argument('--start-seed',type=int,default=369)
+    study.add_argument('--runs',type=int,default=10)
+    study.add_argument('--samples',type=int,default=60)
+    study.add_argument('--capacity',type=int,default=9)
+    study.add_argument('--output',type=Path,default=Path('outputs/study-369'))
+    card=sub.add_parser('teach-card',help='explicitly enroll a teacher-approved exercise')
+    card.add_argument('--db',type=Path,required=True)
+    card.add_argument('--world',required=True)
+    card.add_argument('--source',required=True)
+    card.add_argument('--expected',required=True)
+    card.add_argument('--provenance',required=True,help='human-provided origin, e.g. manual lesson-1')
+    card.add_argument('--capacity',type=int,default=100)
+    due=sub.add_parser('due',help='list due review questions, without answers')
+    due.add_argument('--db',type=Path,required=True)
+    due.add_argument('--limit',type=int,default=10)
+    due.add_argument('--capacity',type=int,default=100)
+    answer=sub.add_parser('answer',help='grade response to approved exercise')
+    answer.add_argument('--db',type=Path,required=True)
+    answer.add_argument('--card-id',type=int,required=True)
+    answer.add_argument('--response',required=True)
+    answer.add_argument('--capacity',type=int,default=100)
+    tick=sub.add_parser('advance-clock',help='advance simulated review ticks; no wall clock')
+    tick.add_argument('--db',type=Path,required=True)
+    tick.add_argument('--steps',type=int,default=1)
+    tick.add_argument('--capacity',type=int,default=100)
     t=sub.add_parser('teach',help='approve one training example; creates persistent local database')
     t.add_argument('--db',type=Path,required=True)
     t.add_argument('--world',required=True)
@@ -37,6 +65,21 @@ def main():
         r=run_benchmark(seed=a.seed,output=a.output,samples=a.samples,capacity=a.capacity)
         print('Wrote',a.output/'report.html')
         print(json.dumps(r['phases'][-1],indent=2))
+    elif a.cmd=='study':
+        result=run_study(start_seed=a.start_seed,runs=a.runs,samples=a.samples,
+                         capacity=a.capacity,output=a.output)
+        print('Study results:', a.output/'study.html')
+        print(json.dumps(result['aggregate'],indent=2))
+    elif a.cmd in ('teach-card','due','answer','advance-clock'):
+        if a.cmd=='teach-card': a.db.parent.mkdir(parents=True,exist_ok=True)
+        elif not a.db.is_file(): p.error('database does not exist')
+        with DevelopmentalLearner(a.db,capacity=a.capacity) as learner:
+            tutor=SpacedTutor(learner)
+            if a.cmd=='teach-card': result={'card_id':tutor.enroll(a.world,a.source,a.expected,provenance=a.provenance)}
+            elif a.cmd=='due': result={'clock':tutor.tick,'due':tutor.due(limit=a.limit)}
+            elif a.cmd=='answer': result=tutor.answer(a.card_id,a.response)
+            else: result={'clock':tutor.advance(a.steps)}
+            print(json.dumps(result,indent=2))
     elif a.cmd in ('teach','inspect'):
         a.db.parent.mkdir(parents=True,exist_ok=True) if a.cmd=='teach' else None
         if a.cmd=='inspect' and not a.db.is_file():p.error('database does not exist')
